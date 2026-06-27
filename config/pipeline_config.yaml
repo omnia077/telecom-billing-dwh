@@ -1,0 +1,81 @@
+# ============================================================================
+# Telecom Billing DWH — Pipeline Configuration
+# ============================================================================
+# Maps to: the operator's centralized config for ETL pipeline parameters.
+# In production, these would be managed via Airflow Variables or a config
+# service. Here we use a YAML file for simplicity and portability.
+# ============================================================================
+
+# --- Project Metadata ---
+project:
+  name: "telecom_billing_dwh"
+  owner: "Data Engineering Team"
+  domain: "Telecom Billing & Revenue Assurance"
+  target_role: "Data Engineering Specialist"
+
+# --- Data Volume Configuration ---
+# Controls how much synthetic data the generator produces.
+# These volumes simulate a mid-size telecom operator's daily load.
+generation:
+  num_customers: 3000          # subscriber base size
+  num_billing_events: 50000    # monthly billing transactions
+  num_cdrs: 20000              # call detail records
+  dirty_data_pct: 0.10         # 10% rows get realistic anomalies injected
+
+# --- Emitter (Simulated Real-Time) ---
+# Simulates Huawei CBS pushing micro-batch files via SFTP.
+emitter:
+  interval_seconds: 30         # drop a new CSV every 30 seconds
+  batch_size: 100              # rows per micro-batch file
+  source_types:                # which datasets to stream
+    - "billing_events"
+    - "cdrs"
+
+# --- Layer Paths (Medallion Architecture) ---
+# Maps to: HDFS paths on the operator's Hadoop cluster.
+# Local paths simulate the distributed storage layout.
+paths:
+  landing_batch: "data/landing/batch"
+  landing_stream: "data/landing/stream"
+  bronze: "data/bronze"
+  silver: "data/silver"
+  gold: "data/gold"
+  kpi_mart: "data/kpi_mart"
+  quarantine: "data/quarantine"
+
+# --- Bronze Layer Settings ---
+# Append-only raw storage — no transformations, just format conversion.
+bronze:
+  file_format: "parquet"
+  compression: "snappy"        # matches the operator's Spark default
+  partition_cols:               # how bronze tables are partitioned
+    billing_events: ["event_date"]
+    cdrs: ["call_date"]
+    customers: []               # small dimension, no partition needed
+  metadata_columns:             # audit columns added at ingestion
+    - "_ingested_at"            # UTC timestamp of ingestion
+    - "_source_file"            # original CSV filename
+    - "_batch_id"               # unique batch identifier
+
+# --- Telecom Domain Reference ---
+# Operator-specific values used for realistic data generation.
+telecom:
+  currency: "LC"               # local currency
+  country_code: "+XXX"         # operator country dialing code
+  operator_prefixes:            # operator mobile number prefixes
+    - "0912"
+    - "0916"
+    - "0918"
+  competitor_prefixes:          # for off-net CDR generation
+    - "0922"                   # competitor A
+    - "0900"                   # competitor B
+  plan_types:
+    - "prepaid"
+    - "postpaid"
+    - "hybrid"                 # flex plan
+  service_types:
+    - "voice"
+    - "sms"
+    - "data"
+    - "vas"                    # value-added services (ringtones, etc.)
+    - "roaming"

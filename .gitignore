@@ -1,0 +1,16 @@
+# Spark-generated metadata
+_SUCCESS
+*.crc
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Logs (runtime output)
+logs/
+
+# OS noise
+.DS_Store
+Thumbs.db

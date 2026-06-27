@@ -1,0 +1,8 @@
+pandas
+pyarrow
+numpy
+pyspark
+duckdb
+pyyaml
+apache-airflow
+pytest
